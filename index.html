@@ -50,6 +50,20 @@
       flex-wrap: wrap; gap: 15px;
     }
     /* END STYLE BARU */
+    
+    /* Style untuk placeholder yang lebih jelas */
+    textarea::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+      font-style: italic;
+    }
+    
+    /* Style untuk button enhancer */
+    .enhancer-btn {
+      transition: all 0.2s ease;
+    }
+    .enhancer-btn:hover {
+      transform: translateY(-2px);
+    }
   </style>
 </head>
 <body>
@@ -68,15 +82,29 @@
     <form id="form">
       <div class="mb-4">
         <label class="form-label fw-bold">Prompt (Full NSFW Allowed)</label>
+        <!-- TEXTAREA DIKOSONGKAN (placeholder only) -->
         <textarea class="form-control bg-dark border-0 text-light" id="prompt" rows="5"
-          placeholder="beautiful nude girl, ultra detailed, 8k, masterpiece..."></textarea>
+          placeholder="Masukkan prompt AI di sini... Contoh: beautiful woman, ultra detailed, 8k masterpiece, etc."></textarea>
+        <div class="form-text text-light opacity-75 mt-1">
+          Ketik prompt apa saja. Gunakan tombol di bawah untuk menambahkan keyword.
+        </div>
       </div>
 
-      <div class="d-flex flex-wrap gap-2 mb-4">
-        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addEnhancer(', masterpiece, best quality, ultra detailed, 8k')">8K</button>
-        <button type="button" class="btn btn-outline-danger btn-sm" onclick="addEnhancer(', nude, uncensored, full body')">Nude</button>
-        <button type="button" class="btn btn-outline-warning btn-sm" onclick="addEnhancer(', hentai, ahegao')">Hentai</button>
-        <button type="button" class="btn btn-outline-info btn-sm" onclick="addEnhancer(', cyberpunk, neon rain')">Cyberpunk</button>
+      <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="fw-bold">Quick Enhancers:</span>
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearPrompt()">
+            <i class="bi bi-eraser me-1"></i>Clear Prompt
+          </button>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-outline-primary btn-sm enhancer-btn" onclick="addEnhancer(', masterpiece, best quality, ultra detailed, 8k')">8K Ultra</button>
+          <button type="button" class="btn btn-outline-danger btn-sm enhancer-btn" onclick="addEnhancer(', nude, uncensored, full body')">Nude</button>
+          <button type="button" class="btn btn-outline-warning btn-sm enhancer-btn" onclick="addEnhancer(', hentai, ahegao, anime')">Hentai</button>
+          <button type="button" class="btn btn-outline-info btn-sm enhancer-btn" onclick="addEnhancer(', cyberpunk, neon rain, futuristic')">Cyberpunk</button>
+          <button type="button" class="btn btn-outline-success btn-sm enhancer-btn" onclick="addEnhancer(', photorealistic, realistic, detailed skin')">Photorealistic</button>
+          <button type="button" class="btn btn-outline-light btn-sm enhancer-btn" onclick="addEnhancer(', natural lighting, cinematic, dramatic')">Cinematic</button>
+        </div>
       </div>
 
       <div class="text-center">
@@ -118,7 +146,11 @@
 document.getElementById("form").onsubmit = async (e) => {
   e.preventDefault();
   const prompt = document.getElementById("prompt").value.trim();
-  if (!prompt) return alert("Prompt kosong!");
+  if (!prompt) {
+    alert("Mohon masukkan prompt terlebih dahulu!");
+    document.getElementById("prompt").focus();
+    return;
+  }
 
   const loading = document.getElementById("loading");
   const result = document.getElementById("result");
@@ -130,7 +162,7 @@ document.getElementById("form").onsubmit = async (e) => {
   error.classList.add("d-none");
   loading.classList.remove("d-none");
 
-  // Enhance prompt
+  // Enhance prompt dengan tambahan default
   const fullPrompt = prompt + ", photorealistic, ultra detailed, 8k, masterpiece, best quality, uncensored";
   
   // Direct URL tanpa proxy - pakai image.pollinations.ai
@@ -144,6 +176,9 @@ document.getElementById("form").onsubmit = async (e) => {
     result.classList.remove("d-none");
     dl.href = url;
     dl.download = `ai_image_${Date.now()}.png`;
+    
+    // Scroll ke hasil
+    result.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   img.onerror = () => {
@@ -158,7 +193,33 @@ document.getElementById("form").onsubmit = async (e) => {
 };
 
 function addEnhancer(text) {
-  document.getElementById("prompt").value += text;
+  const textarea = document.getElementById("prompt");
+  const cursorPos = textarea.selectionStart;
+  const currentValue = textarea.value;
+  
+  // Jika textarea kosong, langsung tambahkan text tanpa koma di awal
+  if (currentValue.trim() === '') {
+    textarea.value = text.replace(/^,\s*/, '');
+  } else {
+    // Jika ada teks, tambahkan dengan koma dan spasi
+    const beforeCursor = currentValue.substring(0, cursorPos);
+    const afterCursor = currentValue.substring(cursorPos);
+    
+    // Cek apakah sebelum kursor sudah ada koma
+    if (beforeCursor.trim() !== '' && !beforeCursor.endsWith(',') && !beforeCursor.endsWith(' ')) {
+      textarea.value = beforeCursor + ', ' + text + afterCursor;
+      textarea.selectionStart = textarea.selectionEnd = cursorPos + text.length + 2;
+    } else {
+      textarea.value = beforeCursor + text + afterCursor;
+      textarea.selectionStart = textarea.selectionEnd = cursorPos + text.length;
+    }
+  }
+  
+  textarea.focus();
+}
+
+function clearPrompt() {
+  document.getElementById("prompt").value = '';
   document.getElementById("prompt").focus();
 }
 
@@ -175,6 +236,11 @@ function copyLink() {
     }, 2000);
   });
 }
+
+// Fokus ke textarea saat halaman dimuat
+window.onload = function() {
+  document.getElementById("prompt").focus();
+};
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
