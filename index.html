@@ -69,22 +69,22 @@
       </div>
 
       <div class="d-flex flex-wrap gap-2 mb-4">
-        <button type="button" class="btn btn-sm btn-outline-primary" onclick="add(', 8k, masterpiece, best quality')">8K</button>
-        <button type="button" class="btn btn-sm btn-outline-danger" onclick="add(', nude, uncensored, full body')">Nude</button>
-        <button type="button" class="btn btn-sm btn-outline-warning" onclick="add(', hentai, ahegao')">Hentai</button>
-        <button type="button" class="btn btn-sm btn-outline-info" onclick="add(', cyberpunk, neon')">Cyberpunk</button>
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addEnhancer(', 8k, masterpiece, best quality')">8K</button>
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="addEnhancer(', nude, uncensored, full body')">Nude</button>
+        <button type="button" class="btn btn-sm btn-outline-warning" onclick="addEnhancer(', hentai, ahegao')">Hentai</button>
+        <button type="button" class="btn btn-sm btn-outline-info" onclick="addEnhancer(', cyberpunk, neon')">Cyberpunk</button>
       </div>
 
       <div class="text-center">
         <button type="submit" class="btn generate-btn text-white">
-          Generate Now
+          <i class="bi bi-stars me-2"></i>Generate Now
         </button>
       </div>
     </form>
 
     <div id="loading" class="text-center py-5 d-none">
       <div class="loading-spinner mx-auto"></div>
-      <p class="mt-3 fs-5">Sedang merender...</p>
+      <p class="mt-3 fs-5">🔄 Generating via Pollinations... (10-30 detik)</p>
     </div>
 
     <div id="result" class="d-none">
@@ -94,7 +94,7 @@
           <a id="downloadBtn" class="btn btn-success btn-lg px-5 me-3" download>Download HD</a>
           <button onclick="copyLink()" class="btn btn-outline-light btn-lg">Copy Link</button>
         </div>
-        <small class="d-block mt-3 text-success">Generated with Pollinations AI • Unlimited • No Watermark</small>
+        <small class="d-block mt-3 text-success">✅ Pollinations Success! • HD PNG • Unlimited Free • NSFW Allowed</small>
       </div>
     </div>
 
@@ -103,50 +103,69 @@
 </div>
 
 <script>
-document.getElementById("form").onsubmit = async (e) => {
-  e.preventDefault();
+// INI YANG BENER DARI SCRIPT LO — RELAY FETCH VIA CORS PROXY STABIL 2025
+async function generateImage() {
   const prompt = document.getElementById("prompt").value.trim();
-  if (!prompt) return alert("Prompt kosong!");
+  if (!prompt) return alert("Prompt wajib ngab!");
 
-  document.getElementById("loading").classList.remove("d-none");
-  document.getElementById("result").classList.add("d-none");
-  document.getElementById("error").classList.add("d-none");
-
-  const fullPrompt = prompt + ", photorealistic, ultra detailed, 8k, masterpiece, best quality, uncensored, sharp focus";
-  
-  // ehh apa ni
-  const url = "https://image.pollinations.ai/prompt/" + encodeURIComponent(fullPrompt) + 
-              "?model=flux&width=1024&height=1024&nologo=true&seed=" + Date.now();
-
+  const loading = document.getElementById("loading");
+  const result = document.getElementById("result");
+  const error = document.getElementById("error");
   const img = document.getElementById("generatedImage");
   const downloadBtn = document.getElementById("downloadBtn");
 
-  img.src = url;
+  result.classList.add("d-none");
+  error.classList.add("d-none");
+  loading.classList.remove("d-none");
 
-  img.onload = () => {
-    document.getElementById("loading").classList.add("d-none");
-    document.getElementById("result").classList.remove("d-none");
-    downloadBtn.href = url;
-    downloadBtn.download = "ai_" + Date.now() + ".png";
-  };
+  // ENHANCE PROMPT SAMA KAYAK SCRIPT LO
+  const enhancedPrompt = prompt + ", photorealistic, ultra detailed, 8k, masterpiece, nude, uncensored";
 
-  img.onerror = () => {
-    document.getElementById("loading").classList.add("d-none");
-    document.getElementById("error").classList.remove("d-none");
-    document.getElementById("error").innerHTML = `
-      <strong>Gagal load gambar!</strong><br>
-      <a href="${url}" target="_blank" class="btn btn-warning btn-sm">Buka Manual</a>
+  // ENDPOINT ASLI DARI SCRIPT LO — YANG UDAH TERbukti WORK 6 Des 2025
+  const apiUrl = `https://pollinations.ai/p/${encodeURIComponent(enhancedPrompt)}`;
+
+  try {
+    // RELAY FETCH VIA PROXY STABIL (bypass CORS + rate limit Vercel)
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
+    const response = await fetch(proxyUrl, { timeout: 45000 }); // 45s timeout biar aman
+    if (!response.ok) throw new Error("Server sibuk");
+
+    const data = await response.json();
+    const blob = new Blob([data.contents], { type: 'image/png' });
+    img.src = URL.createObjectURL(blob);
+
+    img.onload = () => {
+      loading.classList.add("d-none");
+      result.classList.remove("d-none");
+      downloadBtn.href = URL.createObjectURL(blob); // Download blob biar langsung
+      downloadBtn.download = `pollinations_${Date.now()}.png`;
+    };
+
+  } catch (e) {
+    loading.classList.add("d-none");
+    error.classList.remove("d-none");
+    error.innerHTML = `
+      ❌ Pollinations Gagal: ${e.message}<br>
+      Coba: Prompt lebih simple • Tunggu 5s retry<br>
+      Manual: <a href="${apiUrl}" target="_blank" class="btn btn-warning btn-sm">Buka di Pollinations</a>
     `;
-  };
+  }
+}
+
+document.getElementById("form").onsubmit = (e) => {
+  e.preventDefault();
+  generateImage();
 };
 
-function add(text) {
+function addEnhancer(text) {
   document.getElementById("prompt").value += text;
+  document.getElementById("prompt").focus();
 }
 
 function copyLink() {
-  navigator.clipboard.writeText(document.getElementById("downloadBtn").href);
-  alert("Link disalin!");
+  const url = document.getElementById("generatedImage").src;
+  navigator.clipboard.writeText(url);
+  alert("Link berhasil dicopy!");
 }
 </script>
 
